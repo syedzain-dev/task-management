@@ -3,9 +3,9 @@ import { generateToken } from '../middleware/authMiddleware.js';
 import db from '../config/db.js';
 
 export const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
-  if (!name || !email || !password)
+  if (!name || !email || !password || !role)
     return res.status(400).json({ message: 'All fields are required' });
 
   try {
@@ -14,7 +14,7 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userData = { name, email, password: hashedPassword };
+    const userData = { name, email, password: hashedPassword, role };
 
     const [result] = await db.query('INSERT INTO users SET ?', userData);
     userData.id = result.insertId;
@@ -67,21 +67,26 @@ export const loginUser = async (req, res) => {
 };
 
 export const getAllUsers = async (req, res) => {
-  try {
-    const [users] = await db.query('SELECT id, name, email FROM users');
+  // Check if logged-in user is admin
+  console.log(req.user);
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
+  }
 
+  try {
+    const [users] = await db.query('SELECT id, name, email, role FROM users');
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}
+};
 
 // Get user by ID
 export const getUser = async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const [users] = await db.query('SELECT id, name, email FROM users WHERE id = ?', [userId]);
+    const [users] = await db.query('SELECT id, name, email, role FROM users WHERE id = ?', [userId]);
     if (users.length === 0) 
       return res.status(404).json({ message: 'User not found' });
 
@@ -94,7 +99,7 @@ export const getUser = async (req, res) => {
 // Update user by ID
 export const updateUser = async (req, res) => {
   const userId = req.params.id;
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
   try {
     // Check if user exists
@@ -107,6 +112,7 @@ export const updateUser = async (req, res) => {
     if (name) updatedData.name = name;
     if (email) updatedData.email = email;
     if (password) updatedData.password = await bcrypt.hash(password, 10);
+     if (role) updatedData.role = role
 
     if (Object.keys(updatedData).length === 0) 
       return res.status(400).json({ message: 'No data provided to update' });

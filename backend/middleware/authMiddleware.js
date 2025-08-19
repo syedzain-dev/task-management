@@ -15,10 +15,21 @@ export const authenticateToken = (req, res, next) => {
   });
 };
 
+export const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    const userRole = req.user.role;
+
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Access denied: Insufficient permissions' });
+    }
+
+    next();
+  };
+};
 
 export const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name },
+    { id: user.id, email: user.email, name: user.name, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
