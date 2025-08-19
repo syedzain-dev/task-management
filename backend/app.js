@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 const app = express();
 import userRouter from './routers/userRouter.js';
 import taskRouter from './routers/taskRoutes.js';
+import categoryRouter from './routers/categoryRoutes.js'
 
 dotenv.config({ path: './config/.env' });
 
@@ -14,7 +15,8 @@ app.use(cookieParser());
 
 
 app.use('/api/users', userRouter);
-app.use('/api/tasks', taskRouter)
+app.use('/api/tasks', taskRouter);
+app.use('/api/category', categoryRouter);
 
 
 
