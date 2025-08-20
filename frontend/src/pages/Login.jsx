@@ -1,48 +1,47 @@
 import React, { useState } from 'react';
-import '../styles/login.css';  // We'll create this CSS file
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    navigate("/home")
+    try {
+      const res = await axios.post('/api/users/login', formData, { withCredentials: true });
+      setMessage(res.data.message);
+      navigate('/dashboard');
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Login failed');
+    }
   };
 
   return (
-    <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
-        <h2>Login</h2>
+    <div className="container mt-5">
+      <h2 className="mb-4">Login</h2>
+      {message && <div className="alert alert-info">{message}</div>}
 
-        <label htmlFor="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
+      <form onSubmit={handleSubmit} className="card p-4 shadow-sm">
+        <div className="mb-3">
+          <label className="form-label">Email</label>
+          <input name="email" type="email" className="form-control" onChange={handleChange} required />
+        </div>
 
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input name="password" type="password" className="form-control" onChange={handleChange} required />
+        </div>
 
-        <button type="submit">Log In</button>
+        <button type="submit" className="btn btn-success w-100">Login</button>
       </form>
     </div>
   );
-}
+};
 
 export default Login;
